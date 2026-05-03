@@ -1,6 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Mail, Linkedin, MapPin, Award, GraduationCap, Code2, Globe, Brain, Mic, ArrowRight, Send } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import Vapi from "@vapi-ai/web";
+import { Mail, Linkedin, MapPin, Award, GraduationCap, Code2, Globe, Brain, Mic, MicOff, ArrowRight, Send } from "lucide-react";
+
+const VAPI_PUBLIC_KEY = "fd4d2f7e-c8d7-471a-be2a-211c41c9d28c";
+const VAPI_ASSISTANT_ID = "b021b514-1454-4a40-b81d-937b0d9277c3";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -278,15 +282,45 @@ function Footer() {
 }
 
 function VapiButton() {
+  const vapiRef = useRef<Vapi | null>(null);
+  const [active, setActive] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const vapi = new Vapi(VAPI_PUBLIC_KEY);
+    vapiRef.current = vapi;
+    vapi.on("call-start", () => { setActive(true); setLoading(false); });
+    vapi.on("call-end", () => { setActive(false); setLoading(false); });
+    vapi.on("error", (e) => { console.error("Vapi error", e); setLoading(false); });
+    return () => { vapi.stop(); };
+  }, []);
+
+  const toggle = async () => {
+    const vapi = vapiRef.current;
+    if (!vapi) return;
+    if (active) {
+      vapi.stop();
+    } else {
+      try {
+        setLoading(true);
+        await vapi.start(VAPI_ASSISTANT_ID);
+      } catch (e) {
+        console.error(e);
+        setLoading(false);
+      }
+    }
+  };
+
   return (
     <button
       id="vapi-button"
-      aria-label="Talk to my AI assistant"
-      className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gold shadow-[var(--shadow-gold)] transition-transform hover:scale-110 active:scale-95"
+      onClick={toggle}
+      aria-label={active ? "End voice call" : "Talk to my AI assistant"}
+      className={`fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-[var(--shadow-gold)] transition-transform hover:scale-110 active:scale-95 ${active ? "bg-red-500" : "bg-gold"}`}
       style={{ width: 56, height: 56 }}
     >
-      <Mic className="h-6 w-6" />
-      <span className="absolute inset-0 rounded-full animate-ping bg-gold/40 -z-10" />
+      {active ? <MicOff className="h-6 w-6 text-white" /> : <Mic className="h-6 w-6" />}
+      <span className={`absolute inset-0 rounded-full -z-10 ${active || loading ? "animate-ping bg-gold/40" : ""}`} />
     </button>
   );
 }
