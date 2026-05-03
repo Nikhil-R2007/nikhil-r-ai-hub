@@ -282,15 +282,45 @@ function Footer() {
 }
 
 function VapiButton() {
+  const vapiRef = useRef<Vapi | null>(null);
+  const [active, setActive] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const vapi = new Vapi(VAPI_PUBLIC_KEY);
+    vapiRef.current = vapi;
+    vapi.on("call-start", () => { setActive(true); setLoading(false); });
+    vapi.on("call-end", () => { setActive(false); setLoading(false); });
+    vapi.on("error", (e) => { console.error("Vapi error", e); setLoading(false); });
+    return () => { vapi.stop(); };
+  }, []);
+
+  const toggle = async () => {
+    const vapi = vapiRef.current;
+    if (!vapi) return;
+    if (active) {
+      vapi.stop();
+    } else {
+      try {
+        setLoading(true);
+        await vapi.start(VAPI_ASSISTANT_ID);
+      } catch (e) {
+        console.error(e);
+        setLoading(false);
+      }
+    }
+  };
+
   return (
     <button
       id="vapi-button"
-      aria-label="Talk to my AI assistant"
-      className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gold shadow-[var(--shadow-gold)] transition-transform hover:scale-110 active:scale-95"
+      onClick={toggle}
+      aria-label={active ? "End voice call" : "Talk to my AI assistant"}
+      className={`fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-[var(--shadow-gold)] transition-transform hover:scale-110 active:scale-95 ${active ? "bg-red-500" : "bg-gold"}`}
       style={{ width: 56, height: 56 }}
     >
-      <Mic className="h-6 w-6" />
-      <span className="absolute inset-0 rounded-full animate-ping bg-gold/40 -z-10" />
+      {active ? <MicOff className="h-6 w-6 text-white" /> : <Mic className="h-6 w-6" />}
+      <span className={`absolute inset-0 rounded-full -z-10 ${active || loading ? "animate-ping bg-gold/40" : ""}`} />
     </button>
   );
 }
