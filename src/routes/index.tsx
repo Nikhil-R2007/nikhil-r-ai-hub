@@ -1,6 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Mail, Linkedin, MapPin, Award, GraduationCap, Code2, Globe, Brain, Mic, ArrowRight, Send } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import Vapi from "@vapi-ai/web";
+import { Mail, Linkedin, MapPin, Award, GraduationCap, Code2, Globe, Brain, Mic, MicOff, ArrowRight, Send } from "lucide-react";
+
+const VAPI_PUBLIC_KEY = "fd4d2f7e-c8d7-471a-be2a-211c41c9d28c";
+const VAPI_ASSISTANT_ID = "b021b514-1454-4a40-b81d-937b0d9277c3";
 
 export const Route = createFileRoute("/")({
   component: Index,
