@@ -94,8 +94,8 @@ function Hero() {
 
         <div className="reveal mt-16 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl mx-auto">
           {[
-            { icon: GraduationCap, value: "1st Year", label: "Experience Level" },
-            { icon: Award, value: "First Class with Distinction", label: "Top Achievement" },
+            { icon: GraduationCap, value: "Studying in 1st Year", label: "Year of Study" },
+            { icon: Award, value: "Sri Krishna College of Engineering and Technology", label: "Institution" },
             { icon: MapPin, value: "Coimbatore, India", label: "Location" },
           ].map((s) => (
             <div key={s.label} className="glass rounded-2xl p-6 text-left">
