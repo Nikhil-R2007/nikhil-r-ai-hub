@@ -281,17 +281,26 @@ function Footer() {
   );
 }
 
+type Line = { role: "user" | "assistant"; text: string };
+
 function VapiButton() {
   const vapiRef = useRef<Vapi | null>(null);
   const [active, setActive] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [lines, setLines] = useState<Line[]>([]);
 
   useEffect(() => {
     const vapi = new Vapi(VAPI_PUBLIC_KEY);
     vapiRef.current = vapi;
-    vapi.on("call-start", () => { setActive(true); setLoading(false); });
+    vapi.on("call-start", () => { setActive(true); setLoading(false); setLines([]); });
     vapi.on("call-end", () => { setActive(false); setLoading(false); });
     vapi.on("error", (e) => { console.error("Vapi error", e); setLoading(false); });
+    vapi.on("message", (msg: any) => {
+      if (msg?.type === "transcript" && msg.transcriptType === "final" && msg.transcript) {
+        const role: "user" | "assistant" = msg.role === "user" ? "user" : "assistant";
+        setLines((prev) => [...prev.slice(-6), { role, text: msg.transcript }]);
+      }
+    });
     return () => { vapi.stop(); };
   }, []);
 
@@ -312,16 +321,48 @@ function VapiButton() {
   };
 
   return (
-    <button
-      id="vapi-button"
-      onClick={toggle}
-      aria-label={active ? "End voice call" : "Talk to my AI assistant"}
-      className={`fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-[var(--shadow-gold)] transition-transform hover:scale-110 active:scale-95 ${active ? "bg-red-500" : "bg-gold"}`}
-      style={{ width: 56, height: 56 }}
-    >
-      {active ? <MicOff className="h-6 w-6 text-white" /> : <Mic className="h-6 w-6" />}
-      <span className={`absolute inset-0 rounded-full -z-10 ${active || loading ? "animate-ping bg-gold/40" : ""}`} />
-    </button>
+    <>
+      {active && (
+        <div className="fixed inset-0 z-40 bg-black/80 backdrop-blur-md flex flex-col items-center px-5 pt-24 pb-32 animate-[fadeIn_0.2s_ease-out]">
+          <div className="glass-strong rounded-full px-5 py-2.5 flex items-center gap-2.5 border border-gold/30">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75 animate-ping" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500" />
+            </span>
+            <span className="text-sm font-semibold tracking-wide">Listening...</span>
+          </div>
+
+          <div className="mt-8 w-full max-w-xl flex-1 overflow-y-auto space-y-3">
+            {lines.length === 0 ? (
+              <p className="text-center text-sm text-muted-foreground italic">Say hi to start the conversation…</p>
+            ) : (
+              lines.map((l, i) => (
+                <div
+                  key={i}
+                  className={`glass rounded-2xl p-4 ${l.role === "assistant" ? "border-gold/30" : ""}`}
+                >
+                  <div className={`text-xs uppercase tracking-wider font-semibold mb-1 ${l.role === "assistant" ? "text-gold" : "text-muted-foreground"}`}>
+                    {l.role === "assistant" ? "Nikhil" : "You"}
+                  </div>
+                  <div className="text-sm md:text-base leading-relaxed">{l.text}</div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      <button
+        id="vapi-button"
+        onClick={toggle}
+        aria-label={active ? "End voice call" : "Talk to my AI assistant"}
+        className={`fixed bottom-6 right-6 z-50 flex items-center justify-center rounded-full shadow-[var(--shadow-gold)] transition-transform hover:scale-110 active:scale-95 ${active ? "bg-red-500 shadow-[0_0_30px_rgba(239,68,68,0.6)]" : "bg-gold"}`}
+        style={{ width: 56, height: 56 }}
+      >
+        {active ? <MicOff className="h-6 w-6 text-white" /> : <Mic className="h-6 w-6" />}
+        <span className={`absolute inset-0 rounded-full -z-10 ${active || loading ? "animate-ping bg-gold/40" : ""}`} />
+      </button>
+    </>
   );
 }
 
